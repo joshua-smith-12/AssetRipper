@@ -1,5 +1,6 @@
 ﻿using AssetRipper.Assets;
 using AssetRipper.GUI.Web.Paths;
+using AssetRipper.SourceGenerated.Classes.ClassID_114;
 using AssetRipper.Web.Extensions;
 using Microsoft.AspNetCore.Http;
 
@@ -22,12 +23,13 @@ public sealed class ViewPage : DefaultPage
 				new AudioTab(Asset),
 				new ImageTab(Asset),
 				new TextTab(Asset),
-				new FontTab(Asset),
+				//new FontTab(Asset),
 				new YamlTab(Asset),
 				new JsonTab(Asset),
 				new HexTab(Asset),
 				new DependenciesTab(Asset),
 				new DevelopmentTab(Asset),
+				new ObjDataTab(Asset),
 			];
 
 		HtmlTab.WriteNavigation(writer, tabs);
@@ -62,6 +64,9 @@ public sealed class ViewPage : DefaultPage
 		}
 		else
 		{
+			IUnityAssetBase structure = null;
+			var behaviour = asset as IMonoBehaviour;
+			if (behaviour != null) structure = behaviour.Structure;
 			return new ViewPage() { Asset = asset, Path = path }.WriteToResponse(context.Response);
 		}
 	}

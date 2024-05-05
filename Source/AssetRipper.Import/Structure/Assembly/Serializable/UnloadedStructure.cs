@@ -73,7 +73,7 @@ public sealed class UnloadedStructure : UnityAssetBase
 			Logger.Warning(LogCategory.Import, $"Could not read MonoBehaviour structure for `{MonoBehaviour.ScriptP?.GetFullName()}`. Reason: {failureReason}");
 		}
 
-		MonoBehaviour.Structure = null;
+		//MonoBehaviour.Structure = null;
 		return null;
 	}
 
