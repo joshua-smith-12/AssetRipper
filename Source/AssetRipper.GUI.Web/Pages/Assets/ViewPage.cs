@@ -35,39 +35,4 @@ public sealed class ViewPage : DefaultPage
 		HtmlTab.WriteNavigation(writer, tabs);
 		HtmlTab.WriteContent(writer, tabs);
 	}
-
-	public static Task HandlePostRequest(HttpContext context)
-	{
-		string? json = context.Request.Form[PathLinking.FormKey];
-		if (string.IsNullOrEmpty(json))
-		{
-			return context.Response.NotFound("The path must be included in the request.");
-		}
-
-		AssetPath path;
-		try
-		{
-			path = AssetPath.FromJson(json);
-		}
-		catch (Exception ex)
-		{
-			return context.Response.NotFound(ex.ToString());
-		}
-
-		if (!GameFileLoader.IsLoaded)
-		{
-			return context.Response.NotFound("No files loaded.");
-		}
-		else if (!GameFileLoader.GameBundle.TryGetAsset(path, out IUnityObjectBase? asset))
-		{
-			return context.Response.NotFound($"Asset could not be resolved: {path}");
-		}
-		else
-		{
-			IUnityAssetBase structure = null;
-			var behaviour = asset as IMonoBehaviour;
-			if (behaviour != null) structure = behaviour.Structure;
-			return new ViewPage() { Asset = asset, Path = path }.WriteToResponse(context.Response);
-		}
-	}
 }

@@ -140,7 +140,7 @@ internal sealed class ObjDataTab : HtmlTab
 			var file = Asset.Collection.Assets[referenceDword2];
 			if (file != null)
 			{
-				builder.Append($"Reference -> {Asset.Collection.Name} / {file.ClassName} (FileID={referenceDword2})\n");
+				builder.Append($"Reference -> {Asset.Collection.Name} / {file.ClassName} (FileID={referenceDword2}) (MainAsset={file.MainAsset.GetBestName()})\n");
 			}
 		}
 		else if (referenceDword1 != 0 && referenceDword2 != 0)
@@ -148,7 +148,7 @@ internal sealed class ObjDataTab : HtmlTab
 			var file = Asset.Collection.Dependencies[referenceDword1].Assets[referenceDword2];
 			if (file != null)
 			{
-				builder.Append($"Reference -> {Asset.Collection.Dependencies[referenceDword1].Name} / {file.ClassName} (FileID={referenceDword2})\n");
+				builder.Append($"Reference -> {Asset.Collection.Dependencies[referenceDword1].Name} / {file.ClassName} (MaybeName={Asset.Collection.Dependencies[referenceDword1].Assets[1].GetBestName()}) (FileID={referenceDword2}) (MainAsset={file.MainAsset.GetBestName()})\n");
 			}
 		}
 		else
