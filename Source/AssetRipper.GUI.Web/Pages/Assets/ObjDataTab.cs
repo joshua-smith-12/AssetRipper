@@ -117,10 +117,29 @@ internal sealed class ObjDataTab : HtmlTab
 		{
 			var result = Encoding.UTF8.GetString(data.ToArray(), index, length);
 			index += length;
-			index += 4 - (index % 4); // round to nearest dword necessary?
+			if (index % 4 != 0)
+				index += 4 - (index % 4); // round to nearest dword necessary?
 			return result;
 		}
 		return string.Empty;
+	}
+
+	public void DoEnum(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index, string[] values)
+	{
+		var value = ReadInteger(data, ref index);
+		if (value > values.Length)
+		{
+			builder.Append($"Unknown {value}\n");
+		}
+		else
+		{
+			builder.Append($"{values[value]} ({value})\n");
+		}
+	}
+
+	public void DoColor(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append($"({MathF.Floor(ReadFloat(data, ref index) * 256)}, {MathF.Floor(ReadFloat(data, ref index) * 256)}, {MathF.Floor(ReadFloat(data, ref index) * 256)}, {MathF.Floor(ReadFloat(data, ref index) * 256)})\n");
 	}
 
 	public void ResolveReference(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
@@ -206,11 +225,8 @@ internal sealed class ObjDataTab : HtmlTab
 	public void DoUIWidget(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
 	{
 		builder.Append("UIWidget:\n");
-		builder.Append("\tColor Color:\n");
-		builder.Append($"\t\tRed: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tGreen: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tBlue: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tAlpha: {ReadFloat(data, ref index)}\n");
+		builder.Append("\tColor: ");
+		DoColor(data, builder, ref index);
 
 		var pivot = ReadInteger(data, ref index);
 		switch (pivot)
@@ -353,17 +369,11 @@ internal sealed class ObjDataTab : HtmlTab
 
 		builder.Append($"\tApply Gradient: {ReadBoolean(data, ref index)}\n");
 
-		builder.Append("\tColor Top Gradient:\n");
-		builder.Append($"\t\tRed: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tGreen: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tBlue: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tAlpha: {ReadFloat(data, ref index)}\n");
+		builder.Append("\tTop Gradient: ");
+		DoColor(data, builder, ref index);
 
-		builder.Append("\tColor Bottom Gradient:\n");
-		builder.Append($"\t\tRed: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tGreen: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tBlue: {ReadFloat(data, ref index)}\n");
-		builder.Append($"\t\tAlpha: {ReadFloat(data, ref index)}\n");
+		builder.Append("\tBottom Gradient: ");
+		DoColor(data, builder, ref index);
 
 		var advancedType = ReadInteger(data, ref index);
 		switch (advancedType)
@@ -460,12 +470,80 @@ internal sealed class ObjDataTab : HtmlTab
 
 		builder.Append($"\tSprite Name: {ReadString(data, ref index)}\n");
 		builder.Append($"\tFixed Aspect Ratio: {ReadBoolean(data, ref index)}\n");
-		builder.Append($"\tFill Center: {ReadBoolean(data, ref index)}\n");
+		//builder.Append($"\tFill Center: {ReadBoolean(data, ref index)}\n");
 	}
 
 	public void DoUILabel(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
 	{
+		builder.Append("UILabel:\n");
 
+		builder.Append("\tCrispness: ");
+		DoEnum(data, builder, ref index, ["Never", "On Desktop", "Always"]);
+
+		builder.Append("\tTrue Type Font: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append("\tObject Font: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append($"\tText: {ReadString(data, ref index)}\n");
+		builder.Append($"\tSize: {ReadInteger(data, ref index)}\n");
+
+		builder.Append("\tStyle: ");
+		DoEnum(data, builder, ref index, ["Normal", "Bold", "Italic", "Bold and Italic"]);
+
+		builder.Append("\tAlignment: ");
+		DoEnum(data, builder, ref index, ["Automatic", "Left", "Center", "Right", "Justified"]);
+
+		builder.Append($"\tEncoding: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tMax Line Count: {ReadInteger(data, ref index)}\n");
+
+		builder.Append("\tEffect: ");
+		DoEnum(data, builder, ref index, ["None", "Shadow", "Outline", "Outline8", "Outline8 Shadow"]);
+
+		builder.Append("\tEffect Color: ");
+		DoColor(data, builder, ref index);
+
+		builder.Append("\tSymbol Style: ");
+		DoEnum(data, builder, ref index, ["None", "Normal", "Colored", "No Outline"]);
+
+		builder.Append($"\tVector2 Effect Distance: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+
+		builder.Append("\tOverflow: ");
+		DoEnum(data, builder, ref index, ["Shrink Content", "Clamp Content", "Resize Freely", "Resize Height"]);
+
+		builder.Append($"\tApply Gradient: {ReadBoolean(data, ref index)}\n");
+
+		builder.Append("\tTop Gradient: ");
+		DoColor(data, builder, ref index);
+
+		builder.Append("\tBottom Gradient: ");
+		DoColor(data, builder, ref index);
+
+		builder.Append($"\tX Spacing: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tY Spacing: {ReadInteger(data, ref index)}\n");
+
+		builder.Append($"\tUse Float Spacing: {ReadBoolean(data, ref index)}\n");
+
+		builder.Append($"\tFloat X Spacing: {ReadFloat(data, ref index)}\n");
+		builder.Append($"\tFloat Y Spacing: {ReadFloat(data, ref index)}\n");
+
+		builder.Append("\tEffect Color 2: ");
+		DoColor(data, builder, ref index);
+
+		builder.Append($"\tVector2 Effect Distance 2: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+		builder.Append($"\tOverflow Ellipsis: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tOverflow Width: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tOverflow Height: {ReadInteger(data, ref index)}\n");
+
+		builder.Append("\tModifier: ");
+		DoEnum(data, builder, ref index, ["None", "ToUppercase", "ToLowercase"]);
+
+		builder.Append($"\tShrink to Fit: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tMax Line Width: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tMax Line Height: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tLine Width: {ReadFloat(data, ref index)}\n");
+		builder.Append($"\tMulti-line: {ReadBoolean(data, ref index)}\n");
 	}
 
 	public void DoUICamera(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
@@ -542,17 +620,106 @@ internal sealed class ObjDataTab : HtmlTab
 
 	public void DoUIButtonColor(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
 	{
+		builder.Append("UIButtonColor:\n");
 
+		builder.Append("\tTween Target: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append("\tHover Color: ");
+		DoColor(data, builder, ref index);
+
+		builder.Append("\tPressed Color: ");
+		DoColor(data, builder, ref index);
+
+		builder.Append("\tDisabled Color: ");
+		DoColor(data, builder, ref index);
+
+		builder.Append($"\tDuration: {ReadFloat(data, ref index)}\n");
 	}
 
 	public void DoUIButton(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
 	{
+		builder.Append("UIButton:\n");
+		builder.Append($"\tDrag Highlight: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tHover Sprite: {ReadString(data, ref index)}\n");
+		builder.Append($"\tPressed Sprite: {ReadString(data, ref index)}\n");
+		builder.Append($"\tDisabled Sprite: {ReadString(data, ref index)}\n");
 
+		builder.Append($"\tHover Sprite 2D: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append($"\tPressed Sprite 2D: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append($"\tDisabled Sprite 2D: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append($"\tPixel Snap: {ReadBoolean(data, ref index)}\n");
 	}
 
 	public void DoUIViewport(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
 	{
+		builder.Append("UIViewport:\n");
 
+		builder.Append($"\tSource Camera: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append($"\tTop Left Transform: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append($"\tBottom Right Transform: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append($"\tFull Size: {ReadFloat(data, ref index)}\n");
+	}
+
+	public void DoUIFont(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append("UIFont:\n");
+		builder.Append($"\tMaterial: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tRect: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+		builder.Append($"\tUnknown Value: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tBitmap Font: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tAtlas: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tReplacement Font: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tSymbol List: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tDynamic Font: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tDynamic Font Size: {ReadInteger(data, ref index)}\n");
+		builder.Append("\tDynamic Font Style: ");
+		DoEnum(data, builder, ref index, ["Normal", "Bold", "Italic", "Bold and Italic"]);
+	}
+
+	public void DoUIToggle(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append("UIToggle:\n");
+		builder.Append($"\tGroup: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tActive Sprite: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tInvert Sprite State: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tActive Animation: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tAnimator: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tTween: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tStarts Active: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tInstant Tween: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tOption Can Be None: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tOnChange Count: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tCheck Sprite: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tCheck Animation: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tEvent Receiver: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tFunction Name: {ReadString(data, ref index)}\n");
+		builder.Append($"\tStarts Checked: {ReadBoolean(data, ref index)}\n");
 	}
 
 	public void DoUIRoot(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
@@ -668,8 +835,26 @@ internal sealed class ObjDataTab : HtmlTab
 		builder.Append($"\tUse Sorting Order: {ReadBoolean(data, ref index)}\n");
 	}
 
+	struct AtlasSprite
+	{
+		public string name;
+		public int x;
+		public int y;
+		public int width;
+		public int height;
+		public int borderLeft;
+		public int borderRight;
+		public int borderTop;
+		public int borderBottom;
+		public int paddingLeft;
+		public int paddingRight;
+		public int paddingTop;
+		public int paddingBottom;
+	}
+
 	public void DoUIAtlas(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
 	{
+		var sprites = new List<AtlasSprite>();
 		builder.Append("UIAtlas:\n");
 
 		builder.Append("\tMaterial Material: ");
@@ -679,19 +864,37 @@ internal sealed class ObjDataTab : HtmlTab
 		builder.Append($"\tList<SpriteData> Sprites ({spriteCount}):\n");
 		while(spriteCount > 0)
 		{
-			builder.Append($"\t\tName: {ReadString(data, ref index)}\n");
-			builder.Append($"\t\t\tPosition: ({ReadInteger(data, ref index)}, {ReadInteger(data, ref index)})\n");
-			builder.Append($"\t\t\tWidth: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tHeight: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tLeft Border: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tRight Border: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tTop Border: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tBottom Border: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tLeft Padding: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tRight Padding: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tTop Padding: {ReadInteger(data, ref index)}\n");
-			builder.Append($"\t\t\tBottom Padding: {ReadInteger(data, ref index)}\n");
+			AtlasSprite spr = new()
+			{
+				name = ReadString(data, ref index),
+				x = ReadInteger(data, ref index),
+				y = ReadInteger(data, ref index),
+				width = ReadInteger(data, ref index),
+				height = ReadInteger(data, ref index),
+				borderLeft = ReadInteger(data, ref index),
+				borderRight = ReadInteger(data, ref index),
+				borderTop = ReadInteger(data, ref index),
+				borderBottom = ReadInteger(data, ref index),
+				paddingLeft = ReadInteger(data, ref index),
+				paddingRight = ReadInteger(data, ref index),
+				paddingTop = ReadInteger(data, ref index),
+				paddingBottom = ReadInteger(data, ref index)
+			};
+			builder.Append($"\t\tName: {spr.name}\n");
+			builder.Append($"\t\t\tPosition: ({spr.x}, {spr.y})\n");
+			builder.Append($"\t\t\tWidth: {spr.width}\n");
+			builder.Append($"\t\t\tHeight: {spr.height}\n");
+			builder.Append($"\t\t\tLeft Border: {spr.borderLeft}\n");
+			builder.Append($"\t\t\tRight Border: {spr.borderRight}\n");
+			builder.Append($"\t\t\tTop Border: {spr.borderTop}\n");
+			builder.Append($"\t\t\tBottom Border: {spr.borderBottom}\n");
+			builder.Append($"\t\t\tLeft Padding: {spr.paddingLeft}\n");
+			builder.Append($"\t\t\tRight Padding: {spr.paddingRight}\n");
+			builder.Append($"\t\t\tTop Padding: {spr.paddingTop}\n");
+			builder.Append($"\t\t\tBottom Padding: {spr.paddingBottom}\n");
 			spriteCount--;
+
+			sprites.Add(spr);
 		}
 
 		builder.Append($"\tPixel Size: {ReadFloat(data, ref index)}\n");
@@ -713,7 +916,63 @@ internal sealed class ObjDataTab : HtmlTab
 				break;
 		}
 
-		builder.Append($"\tFake sprite count: {ReadInteger(data, ref index)}");
+		builder.Append($"\tFake sprite count: {ReadInteger(data, ref index)}\n");
+
+		builder.Append("\n\n");
+		foreach(var sprite in sprites)
+		{
+			builder.Append($"  - name: {sprite.name}\n");
+			builder.Append($"    x: {sprite.x}\n");
+			builder.Append($"    y: {sprite.y}\n");
+			builder.Append($"    width: {sprite.width}\n");
+			builder.Append($"    height: {sprite.height}\n");
+			builder.Append($"    borderLeft: {sprite.borderLeft}\n");
+			builder.Append($"    borderRight: {sprite.borderRight}\n");
+			builder.Append($"    borderTop: {sprite.borderTop}\n");
+			builder.Append($"    borderBottom: {sprite.borderBottom}\n");
+			builder.Append($"    paddingLeft: {sprite.paddingLeft}\n");
+			builder.Append($"    paddingRight: {sprite.paddingRight}\n");
+			builder.Append($"    paddingTop: {sprite.paddingTop}\n");
+			builder.Append($"    paddingBottom: {sprite.paddingBottom}\n");
+		}
+	}
+
+	public void DoUITweener(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append("UITweener:\n");
+
+		builder.Append("\tMethod: ");
+		DoEnum(data, builder, ref index, ["Linear", "Ease In", "Ease Out", "Ease In Out", "Bounce In", "Bounce Out"]);
+		builder.Append("\tStyle: ");
+		DoEnum(data, builder, ref index, ["Once", "Loop", "Ping Pong"]);
+
+		var numCurves = ReadInteger(data, ref index);
+		while (numCurves > 0)
+		{
+			builder.Append($"\tAnimation Keyframe:\n");
+			builder.Append($"\t\tTime: {ReadFloat(data, ref index)}\n");
+			builder.Append($"\t\tValue: {ReadFloat(data, ref index)}\n");
+			builder.Append($"\t\tIn Tangent: {ReadFloat(data, ref index)}\n");
+			builder.Append($"\t\tOut Tangent: {ReadFloat(data, ref index)}\n");
+			builder.Append($"\t\tTangent Mode (Weighted Mode?): {ReadInteger(data, ref index)}\n");
+			builder.Append($"\t\tIn Weight: {ReadFloat(data, ref index)}\n");
+			builder.Append($"\t\tOut Weight: {ReadFloat(data, ref index)}\n");
+			numCurves--;
+		}
+		builder.Append($"\tPre Infinity: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tPost Infinity: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tRotation Order: {ReadInteger(data, ref index)}\n");
+
+		builder.Append($"\tIgnore Timescale: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tDelay: {ReadFloat(data, ref index)}\n");
+		builder.Append($"\tDuration: {ReadFloat(data, ref index)}\n");
+		builder.Append($"\tSteeper Curves: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tTween Group: {ReadInteger(data, ref index)}\n");
+		builder.Append($"\tUse Fixed Update: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tOnFinished Count: {ReadInteger(data, ref index)}\n");
+		builder.Append("\tEvent Receiver: ");
+		ResolveReference(data, builder, ref index);
+		builder.Append($"\tCall when Finished: {ReadString(data, ref index)}\n");
 	}
 
 	public string TryGetSecondaryText(IUnityObjectBase asset)
@@ -723,6 +982,11 @@ internal sealed class ObjDataTab : HtmlTab
 		if (behaviour != null)
 		{
 			Asset = behaviour;
+			builder.Append("Bundle Dependencies:\n");
+			foreach (var dep in Asset.Collection.Dependencies)
+			{
+				builder.Append($"\t{dep.Name}\n");
+			}
 			var structure = behaviour.Structure as UnloadedStructure;
 			if (structure != null)
 			{
@@ -777,8 +1041,35 @@ internal sealed class ObjDataTab : HtmlTab
 						DoUIRect(structure.StructureData, builder, ref index);
 						DoUIPanel(structure.StructureData, builder, ref index);
 						break;
+					case "UIToggle":
+						DoUIWidgetContainer(structure.StructureData, builder, ref index);
+						DoUIToggle(structure.StructureData, builder, ref index);
+						break;
 					case "UICamera":
 						DoUICamera(structure.StructureData, builder, ref index);
+						break;
+					case "UIFont":
+						DoUIFont(structure.StructureData, builder, ref index);
+						break;
+					case "TweenAlpha":
+						DoUITweener(structure.StructureData, builder, ref index);
+						//DoTweenAlpha(structure.StructureData, builder, ref index);
+						break;
+					case "TweenScale":
+						DoUITweener(structure.StructureData, builder, ref index);
+						//DoTweenColor(structure.StructureData, builder, ref index);
+						break;
+					case "TweenRotation":
+						DoUITweener(structure.StructureData, builder, ref index);
+						//DoTweenRotation(structure.StructureData, builder, ref index);
+						break;
+					case "TweenPosition":
+						DoUITweener(structure.StructureData, builder, ref index);
+						//DoTweenPosition(structure.StructureData, builder, ref index);
+						break;
+					case "TweenColor":
+						DoUITweener(structure.StructureData, builder, ref index);
+						//DoTweenColor(structure.StructureData, builder, ref index);
 						break;
 					default:
 						var array = structure.StructureData.ToArray();
