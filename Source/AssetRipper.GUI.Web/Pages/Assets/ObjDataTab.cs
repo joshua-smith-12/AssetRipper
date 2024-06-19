@@ -1007,6 +1007,33 @@ internal sealed class ObjDataTab : HtmlTab
 		builder.Append($"\tEnd Value: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
 	}
 
+	public void DoPlayTween(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append("UIPlayTween:\n");
+
+		builder.Append("\tTween Target: ");
+		ResolveReference(data, builder, ref index);
+
+		builder.Append($"\tTween Group: {ReadInteger(data, ref index)}\n");
+
+		builder.Append("\tTrigger: ");
+		DoEnum(data, builder, ref index, ["Click", "Hover", "Press", "HoverTrue", "HoverFalse", "PressTrue", "PressFalse", "Activate", "ActivateTrue", "ActivateFalse", "DoubleClick", "Select", "SelectTrue", "SelectFalse", "Manual"]);
+
+		builder.Append("\tDirection: ");
+		DoEnum(data, builder, ref index, ["Toggle", "Forward"]);
+
+		builder.Append($"\tReset on Play: {ReadBoolean(data, ref index)}\n");
+		builder.Append($"\tReset if Disabled: {ReadBoolean(data, ref index)}\n");
+
+		builder.Append("\tEnable Condition: ");
+		DoEnum(data, builder, ref index, ["Do Nothing", "Enable then Play", "Ignore Disabled State"]);
+
+		builder.Append("\tDisable Condition: ");
+		DoEnum(data, builder, ref index, ["Do Not Disable", "Disable after Forward"]);
+
+		builder.Append($"\tInclude Children: {ReadBoolean(data, ref index)}\n");
+	}
+
 	public string TryGetSecondaryText(IUnityObjectBase asset)
 	{
 		StringBuilder builder = new();
@@ -1102,6 +1129,9 @@ internal sealed class ObjDataTab : HtmlTab
 					case "TweenColor":
 						DoUITweener(structure.StructureData, builder, ref index);
 						//DoTweenColor(structure.StructureData, builder, ref index);
+						break;
+					case "UIPlayTween":
+						DoPlayTween(structure.StructureData, builder, ref index);
 						break;
 					default:
 						var array = structure.StructureData.ToArray();
