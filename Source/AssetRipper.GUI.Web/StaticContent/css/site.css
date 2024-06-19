@@ -38,3 +38,7 @@ footer {
 .dropdown-description.disabled {
 	display: none; /* Hide disabled elements */
 }
+
+.text-pre {
+	white-space: pre-wrap;
+}

@@ -30,6 +30,7 @@ public sealed class ViewPage : DefaultPage
 				new DependenciesTab(Asset),
 				new DevelopmentTab(Asset),
 				new ObjDataTab(Asset),
+				new TreeViewTab(Asset)
 			];
 
 		HtmlTab.WriteNavigation(writer, tabs);
