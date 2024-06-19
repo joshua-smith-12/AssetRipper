@@ -159,7 +159,7 @@ internal sealed class ObjDataTab : HtmlTab
 			var file = Asset.Collection.Assets[referenceDword2];
 			if (file != null)
 			{
-				builder.Append($"Reference -> {Asset.Collection.Name} / {file.ClassName} (FileID={referenceDword2}) (MainAsset={file.MainAsset.GetBestName()})\n");
+				builder.Append($"Reference -> {Asset.Collection.Name} / {file.ClassName} (FileID={referenceDword2}) (MaybeName={file.GetBestName()}, MainAsset={file.MainAsset?.GetBestName()})\n");
 			}
 		}
 		else if (referenceDword1 != 0 && referenceDword2 != 0)
@@ -167,7 +167,7 @@ internal sealed class ObjDataTab : HtmlTab
 			var file = Asset.Collection.Dependencies[referenceDword1].Assets[referenceDword2];
 			if (file != null)
 			{
-				builder.Append($"Reference -> {Asset.Collection.Dependencies[referenceDword1].Name} / {file.ClassName} (MaybeName={Asset.Collection.Dependencies[referenceDword1].Assets[1].GetBestName()}) (FileID={referenceDword2}) (MainAsset={file.MainAsset.GetBestName()})\n");
+				builder.Append($"Reference -> {Asset.Collection.Dependencies[referenceDword1].Name} / {file.ClassName} (MaybeName={Asset.Collection.Dependencies[referenceDword1].Assets[1].GetBestName()}) (FileID={referenceDword2}) (Asset={file.GetBestName()}, MainAsset={file.MainAsset?.GetBestName()})\n");
 			}
 		}
 		else
@@ -975,6 +975,38 @@ internal sealed class ObjDataTab : HtmlTab
 		builder.Append($"\tCall when Finished: {ReadString(data, ref index)}\n");
 	}
 
+	public void DoTweenAlpha(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append("TweenAlpha:\n");
+
+		builder.Append($"\tStart Value: {ReadFloat(data, ref index)}\n");
+		builder.Append($"\tEnd Value: {ReadFloat(data, ref index)}\n");
+	}
+
+	public void DoTweenPosition(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append("TweenPosition:\n");
+
+		builder.Append($"\tStart Value: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+		builder.Append($"\tEnd Value: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+	}
+
+	public void DoTweenScale(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append("TweenScale:\n");
+
+		builder.Append($"\tStart Value: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+		builder.Append($"\tEnd Value: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+	}
+
+	public void DoTweenRotation(ReadOnlyArraySegment<byte> data, StringBuilder builder, ref int index)
+	{
+		builder.Append("TweenRotation:\n");
+
+		builder.Append($"\tStart Value: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+		builder.Append($"\tEnd Value: ({ReadFloat(data, ref index)}, {ReadFloat(data, ref index)}, {ReadFloat(data, ref index)})\n");
+	}
+
 	public string TryGetSecondaryText(IUnityObjectBase asset)
 	{
 		StringBuilder builder = new();
@@ -1053,19 +1085,19 @@ internal sealed class ObjDataTab : HtmlTab
 						break;
 					case "TweenAlpha":
 						DoUITweener(structure.StructureData, builder, ref index);
-						//DoTweenAlpha(structure.StructureData, builder, ref index);
+						DoTweenAlpha(structure.StructureData, builder, ref index);
 						break;
 					case "TweenScale":
 						DoUITweener(structure.StructureData, builder, ref index);
-						//DoTweenColor(structure.StructureData, builder, ref index);
+						DoTweenScale(structure.StructureData, builder, ref index);
 						break;
 					case "TweenRotation":
 						DoUITweener(structure.StructureData, builder, ref index);
-						//DoTweenRotation(structure.StructureData, builder, ref index);
+						DoTweenRotation(structure.StructureData, builder, ref index);
 						break;
 					case "TweenPosition":
 						DoUITweener(structure.StructureData, builder, ref index);
-						//DoTweenPosition(structure.StructureData, builder, ref index);
+						DoTweenPosition(structure.StructureData, builder, ref index);
 						break;
 					case "TweenColor":
 						DoUITweener(structure.StructureData, builder, ref index);
